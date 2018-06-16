@@ -27,23 +27,20 @@ typedef unsigned int uint;
 __constant__ SimParams params;
 
 // calculate position in uniform grid
-__device__ uint3 calcGridPos(float3 p)
+__device__ int3 calcGridPos(float3 p)
 {
-	uint3 gridPos;
-	gridPos.x = floor((p.x) / params.cellSize.x);
-	gridPos.y = floor((p.y) / params.cellSize.y);
-	gridPos.z = floor((p.z) / params.cellSize.z);
+	int3 gridPos = make_int3(0, 0, 0);
+	gridPos.x = int(p.x / params.cellSize.x) % params.gridSize.x;
+	gridPos.y = int(p.y / params.cellSize.y) % params.gridSize.y;
+	gridPos.z = int(p.z / params.cellSize.z) % params.gridSize.z;
 	/*printf("px = %.4f, py = %.4f, pz = %.4f\n", p.x, p.y, p.z);
 	printf("gx = %d, gy = %d, gz = %d\n", gridPos.x, gridPos.y, gridPos.z);*/
 	return gridPos;
 }
 
 // calculate address in grid from position (clamping to edges)
-__device__ uint calcGridHash(uint3 gridPos)
+__device__ int calcGridHash(int3 gridPos)
 {
-	gridPos.x = gridPos.x % params.gridSize.x;  
-	gridPos.y = gridPos.y % params.gridSize.y;
-	gridPos.z = gridPos.z % params.gridSize.z;
 	return gridPos.z * params.gridSize.x * params.gridSize.y + gridPos.y * params.gridSize.x + gridPos.x;
 }
 
@@ -125,8 +122,11 @@ void updatePositionD(
 		pos.z = params.worldbound.z - 0.001f;
 	}
 
-	newPos[index] = make_float4(pos, 0.0f);
+	newPos[index] = make_float4(pos, 1.0f);
 	velocity[index] = make_float4(vel, 0.0f);
+	/*printf("newPOS: (%f, %f, %f, %f)\nnewVEL: (%f, %f, %f, %f)\n",
+		newPos[index].x, newPos[index].y, newPos[index].z, newPos[index].w,
+		velocity[index].x, velocity[index].y, velocity[index].z, velocity[index].w);*/
 }
 
 __global__
@@ -135,7 +135,7 @@ void clearCells(
 )
 {
 	uint index = blockIdx.x * blockDim.x + threadIdx.x;
-	if (index >= params.numBodies) return;
+	if (index >= params.numCells) return;
 
 	cells_count[index] = 0;
 }
@@ -159,18 +159,19 @@ void updateCells(
 ) 
 {
 	uint index = blockIdx.x * blockDim.x + threadIdx.x;
-	if (index >= params.numBodies) return;
+	if (index >= params.numCells) return;
 
-	uint3 pos = calcGridPos(make_float3(newPos[index]));
-	uint cellHash = calcGridHash(pos);
-
-	uint i = atomicAdd(&cells_count[cellHash], 1);
-	i = min(i, params.maxParticlesPerCell);
-	cells[cellHash * params.maxParticlesPerCell + i] = index;
+	int3 pos = calcGridPos(make_float3(newPos[index]));
+	int cellHash = calcGridHash(pos);
+	cells_count[cellHash];
+	int i = atomicAdd(&cells_count[cellHash], 1);
+	i = min(i, params.maxParticlesPerCell - 1);
+	//cells[cellHash * params.maxParticlesPerCell + i] = index;
+	//printf("cellhash = %d, i = %d, index = %d\n",cellHash,i, index);
 }
 
 __device__
-bool isLegalCell(uint3 h) {
+bool isLegalCell(int3 h) {
 	if (h.x >= 0 && h.x < params.gridSize.x && h.y >= 0 && h.y < params.gridSize.y && h.z >= 0 && h.z < params.gridSize.z)
 		return true;
 	else
@@ -189,23 +190,25 @@ void updateNeighbors(
 	uint index = blockIdx.x * blockDim.x + threadIdx.x;
 	if (index >= params.numBodies) return;
 
-	uint3 pos = calcGridPos(make_float3(newPos[index]));
-	uint neighborIndex;
+	int3 GridPos = calcGridPos(make_float3(newPos[index]));
+	int neighborIndex;
 	for (int z = -1; z <= 1; z++) {
 		for (int y = -1; y <= 1; y++) {
 			for (int x = -1; x <= 1; x++) {
-				uint3 neighborCellPos = make_uint3(pos.x + x, pos.y + y, pos.z + z);
+				int3 neighborCellPos = make_int3(GridPos.x + x, GridPos.y + y, GridPos.z + z);
 				if (isLegalCell(neighborCellPos)) {
-					uint neighborCellHash = calcGridHash(neighborCellPos);
-					uint cellParticleNum = min(cells_count[neighborCellHash], params.maxParticlesPerCell - 1);
-					uint offset = neighborCellHash * params.maxParticlesPerCell;
+					int neighborCellHash = calcGridHash(neighborCellPos);
+					int cellParticleNum = min(cells_count[neighborCellHash], params.maxParticlesPerCell - 1);
+					int CellOffset = neighborCellHash * params.maxParticlesPerCell;
+					int ParticleOffset = index * params.maxNeighborsPerParticle;
 					for (int i = 0; i < cellParticleNum; i++) {
 						if (neighbors_count[index] >= params.maxNeighborsPerParticle) return;
 						
-						neighborIndex = cells[offset + i];
+						neighborIndex = cells[CellOffset + i];
+						if (neighborIndex == index)
+							continue;
 						if (length(make_float3(newPos[index]) - make_float3(newPos[neighborIndex])) <= params.kernelRadius) {
-							neighbors[offset + neighbors_count[index]] = neighborIndex;	//just use the same offset here
-																						//may change, may not
+							neighbors[ParticleOffset + neighbors_count[index]] = neighborIndex;
 							neighbors_count[index]++;
 						}
 					}
@@ -228,12 +231,13 @@ void getDensityD(
 
 	float _density = 0.f;
 	if (neighbors_count[index]) {
-		uint offset = index + params.maxNeighborsPerParticle;
+		uint offset = index * params.maxNeighborsPerParticle;
 		for (int i = 0; i < neighbors_count[index]; i++) {
 			_density += Wpoly6(make_float3(newPos[index]), make_float3(newPos[neighbors[offset + i]]));
 		}
 	}
 	density[index] = _density / params.restDensity - 1;
+	//printf("indes: %d, density: %f\n_density: %f\n",index, density[index], _density);
 }
 
 __global__
@@ -251,7 +255,7 @@ void getLamdaD(
 	float3 gradSelf = make_float3(0.f);
 	float grad = 0.f;
 	if (neighbors_count[index]) {
-		uint offset = index + params.maxNeighborsPerParticle;
+		uint offset = index * params.maxNeighborsPerParticle;
 		for (int i = 0; i < neighbors_count[index]; i++) {
 			float3 gradNeighbor = Wspiky(make_float3(newPos[index]), make_float3(newPos[neighbors[offset + i]]));
 			gradSelf += gradNeighbor;
@@ -266,8 +270,8 @@ void getLamdaD(
 
 __global__
 void getDpD(
-	float4* deltaPos,
 	float4* newPos,
+	float4* deltaPos,
 	uint*	neighbors,
 	uint*	neighbors_count,
 	float*	lamda
@@ -276,16 +280,15 @@ void getDpD(
 	uint index = blockIdx.x * blockDim.x + threadIdx.x;
 	if (index >= params.numBodies) return;
 
-	deltaPos[index] = make_float4(0.f);
 	float3 dP = make_float3(0.f);
 	if (neighbors_count[index]) {
-		uint offset = index + params.maxNeighborsPerParticle;
+		int offset = index * params.maxNeighborsPerParticle;
 		for (int i = 0; i < neighbors_count[index]; i++) {
 			float3 temp = Wspiky(make_float3(newPos[index]), make_float3(newPos[neighbors[offset + i]]));
-			dP += (lamda[index] + lamda[offset + i]) * temp / params.restDensity;
+			dP += (lamda[index] + lamda[neighbors[offset + i]]) * temp;
 		}
 	}
-	deltaPos[index] = make_float4(dP, 0.f);
+	deltaPos[index] = make_float4(dP / params.restDensity, 0.f);
 }
 
 __global__

@@ -36,7 +36,48 @@ extern "C"
 			unsigned int  *cells,
 			unsigned int  *cell_count,
 			unsigned int  numParticles,
+			unsigned int  numGrids,
 			unsigned int  iters
+	);
+
+	void updatePosition(
+		float		  *Vel,
+		float		  *oldPos,
+		float		  *newPos,
+		unsigned int  numParticles
+	);
+
+	void clearCells(
+		unsigned int  *cells_count,
+		unsigned int  numGrids
+	);
+
+	void clearNeighbors(
+		unsigned int  *neighbors_count,
+		unsigned int  numParticles
+	);
+
+	void updateCell(
+		float		  *newPos,
+		unsigned int  *cells,
+		unsigned int  *cells_count,
+		unsigned int  numGrids
+	);
+
+	void updateNeighbors(
+		float		  *newPos,
+		unsigned int  *neighbors,
+		unsigned int  *neighbors_count,
+		unsigned int  *cells,
+		unsigned int  *cells_count,
+		unsigned int  numParticles
+	);
+
+	void updateVelocity(
+		float		  *Vel,
+		float		  *oldPos,
+		float		  *newPos,
+		unsigned int  numParticles
 	);
 #endif
 }

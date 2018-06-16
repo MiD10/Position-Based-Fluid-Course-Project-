@@ -73,12 +73,12 @@ ParticleSystem::ParticleSystem(float dT, unsigned int number_of_particles, int3 
 	params.numBodies = number;
 	params.kernelRadius = 0.1f;
 	params.gridSize = gridSize;
-	params.worldbound = make_float3(gridSize) * params.kernelRadius * 2;
+	params.worldbound = make_float3(gridSize) * params.kernelRadius;
 
 	//grids&cells
 	number_grid_cells = gridSize.x * gridSize.y * gridSize.z;
 	params.numCells = number_grid_cells;
-	params.cellSize = make_float3(params.kernelRadius * 2.0f);
+	params.cellSize = make_float3(params.kernelRadius);
 
 
 	//params.boundaryDamping = 0.f;	//new_velocity = velocity * boundaryDamping when bouncing to the wall|floor
@@ -95,7 +95,7 @@ ParticleSystem::ParticleSystem(float dT, unsigned int number_of_particles, int3 
 	params.restDensity = 6378.0f; //restDensity
 	params.poly6 = 315.f / (64.f * M_PI * pow(params.kernelRadius, 9));
 	params.spiky = 45.f / (M_PI *  pow(params.kernelRadius, 6));
-	params.numIterations = 4;
+	params.numIterations = 1;
 	params.relaxation = 600.f;
 
 	//collision
@@ -114,10 +114,13 @@ void ParticleSystem::initialize() {
 	host_force = new float[number * 4];
 	host_Position = new float[number * 4];
 	host_Velocity = new float[number * 4];
-	host_density = new float[number];
+	/*host_density = new float[number];
 	host_lamda = new float[number];
 	host_delta_Position = new float[number * 4];
 	host_neighborsCount = new unsigned int[number];
+	host_neighbors = new unsigned int[number * params.maxNeighborsPerParticle];
+	host_cells_count = new unsigned int[number_grid_cells];
+	host_cells = new unsigned int[number_grid_cells * params.maxParticlesPerCell];
 	memset(host_delta_Position, 0, number * 4 * sizeof(float));
 	memset(host_lamda, 0, number * sizeof(float));
 	memset(host_density, 0, number * sizeof(float));
@@ -125,7 +128,10 @@ void ParticleSystem::initialize() {
 	memset(host_Position, 0, number * 4 * sizeof(float));
 	memset(host_Velocity, 0, number * 4 * sizeof(float));
 	memset(host_neighborsCount, 0, number * sizeof(unsigned int));
-
+	memset(host_neighbors, 0, number * sizeof(unsigned int) * params.maxNeighborsPerParticle);
+	memset(host_cells_count, 0, number * sizeof(unsigned int));
+	memset(host_cells, 0, number_grid_cells * sizeof(unsigned int) * params.maxParticlesPerCell);
+*/
 	//grids
 	allocateArray((void **)&device_neighbors, number * params.maxNeighborsPerParticle * sizeof(unsigned int));
 	allocateArray((void **)&device_neighbors_count, number * sizeof(unsigned int));
@@ -255,7 +261,7 @@ void ParticleSystem::update(void) {
 
 	device_Position = (float*)mapGLBufferObject(&cuda_posvbo_resource);
 	
-	setParameters(&params);
+	//setParameters(&params);
 
 	update_fluid(
 		device_Velocity,
@@ -269,9 +275,10 @@ void ParticleSystem::update(void) {
 		device_cells,
 		device_cells_count,
 		params.numBodies,
+		params.numCells,
 		params.numIterations
 	);
-	
+
 	//note: do unmap at end here to avoid unnecessary graphics/CUDA context switch
 	unmapGLBufferObject(cuda_posvbo_resource);
 }
@@ -340,9 +347,36 @@ void ParticleSystem::dumpDeltaPosition() {
 void ParticleSystem::dumpNeighbors() {
 	// dump grid information
 	copyArrayFromDevice(host_neighborsCount, device_neighbors_count, 0, sizeof(unsigned int)*number);
+	copyArrayFromDevice(host_neighbors, device_neighbors, 0, sizeof(unsigned int)*number*params.maxNeighborsPerParticle);
 
-	for (uint i = 0; i<number; i += 4) {
-		printf("index %d has %d neighbors\n", i, host_neighborsCount[i]);
+
+	for (int i = 0; i<number; i ++) {
+		if (host_neighborsCount[i]) {
+			printf("index %d has %d neighbors:\n", i, host_neighborsCount[i]);
+			for (int j = 0; j < host_neighborsCount[i]; j++) {
+				printf("%d\n", host_neighbors[i * params.maxNeighborsPerParticle + j]);
+			}
+			printf("=================================================\n");
+		}
+	}
+
+	return;
+}
+
+void ParticleSystem::dumpCells() {
+	// dump grid information
+	copyArrayFromDevice(host_cells_count, device_cells_count, 0, sizeof(unsigned int)*number_grid_cells);
+	copyArrayFromDevice(host_cells, device_cells, 0, sizeof(unsigned int)*number_grid_cells*params.maxParticlesPerCell);
+
+
+	for (int i = 0; i<number_grid_cells; i++) {
+		if (host_cells_count[i]) {
+			printf("cell index %d has %d particles:\n", i, host_cells_count[i]);
+			for (int j = 0; j < host_cells_count[i]; j++) {
+				printf("%d\n", host_cells[i * params.maxParticlesPerCell + j]);
+			}
+			printf("=================================================\n");
+		}
 	}
 
 	return;

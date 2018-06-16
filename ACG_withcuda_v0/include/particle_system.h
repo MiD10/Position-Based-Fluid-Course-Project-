@@ -39,6 +39,9 @@ public:
 	float* host_lamda;
 	float* host_delta_Position;
 	unsigned int* host_neighborsCount;
+	unsigned int* host_neighbors;
+	unsigned int* host_cells_count;
+	unsigned int* host_cells;
 
 
 	//GPU data
@@ -91,6 +94,7 @@ public:
 	void dumpLamda();
 	void dumpDeltaPosition();
 	void dumpNeighbors();
+	void dumpCells();
 };
 
 #endif

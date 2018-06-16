@@ -132,9 +132,10 @@ int main(void) {
 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 	glfwSetCursorPosCallback(window, mouse_callback);
 
-	int3 gridSize = make_int3(8, 8, 8);
-	ParticleSystem tester(0.00415f, num, gridSize);
+	int3 gridSize = make_int3(68, 48, 88);
+	ParticleSystem tester(0.0083f, num, gridSize);
 	tester.resetGrid();
+	//tester.dumpNeighbors();
 	std::cout << "here" << std::endl;
 	while (!glfwWindowShouldClose(window))
 	{
@@ -153,15 +154,18 @@ int main(void) {
 
 		tester.draw(omyShader);
 		tester.update();
+		
 		if (dump) {
-			std::cout << "================================" << std::endl;
-			tester.dumpNeighbors();
-			std::cout << "================================" << std::endl;
+			//std::cout << "================================" << std::endl;
+			//   tester.dumpNeighbors();
+			//std::cout << "================================" << std::endl;
 			//tester.dumpDeltaPosition();
-			std::cout << "================================" << std::endl;
+			//tester.dumpCells();
+			//std::cout << "================================" << std::endl;
 			//tester.dumpParticles(0, 50);
-			std::cout << "================================" << std::endl;
-			dump = false;
+			//std::cout << "================================" << std::endl;
+			//dump = false;
+			//system("pause");
 		}
 		//draw
 		/*omyShader.use();
