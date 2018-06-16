@@ -24,50 +24,19 @@ extern "C"
 
 	void setParameters(SimParams *hostParams);
 
-	void integrateSystem(
-		float *pos,
-		float *vel,
-		float deltaTime,
-		uint numParticles);
-
-	void calcHash(
-		uint  *gridParticleHash,
-		uint  *gridParticleIndex,
-		float *pos,
-		int    numParticles);
-
-	void reorderDataAndFindCellStart(
-		uint  *cellStart,
-		uint  *cellEnd,
-		float *sortedPos,
-		float *sortedVel,
-		uint  *gridParticleHash,
-		uint  *gridParticleIndex,
-		float *oldPos,
-		float *oldVel,
-		uint   numParticles,
-		uint   numCells);
-
-	void collide(
-		float *newVel,
-		float *sortedPos,
-		float *sortedVel,
-		uint  *gridParticleIndex,
-		uint  *cellStart,
-		uint  *cellEnd,
-		uint   numParticles,
-		uint   numCells);
-
-	void positionBasedSim(
-		float *newVel,
-		float *sortedPos,
-		float *sortedVel,
-		uint  *gridParticleIndex,
-		uint  *cellStart,
-		uint  *cellEnd,
-		uint   numParticles,
-		uint   numCells);
-
-	void sortParticles(uint *dGridParticleHash, uint *dGridParticleIndex, uint numParticles);
+	void update_fluid(
+			float		  *Vel,
+			float		  *oldPos,
+			float		  *newPos,
+			float		  *particleDensity,
+			float		  *particleLamda,
+			float		  *particleDeltaPos,
+			unsigned int  *neighbors,
+			unsigned int  *neighbors_count,
+			unsigned int  *cells,
+			unsigned int  *cell_count,
+			unsigned int  numParticles,
+			unsigned int  iters
+	);
 #endif
 }

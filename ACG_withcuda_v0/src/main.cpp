@@ -47,6 +47,7 @@ void setCamera(MyShader omyShader) {
 // process all input: query GLFW whether relevant keys are pressed/released this frame and react accordingly
 // ---------------------------------------------------------------------------------------------------------
 bool global_reset = false;
+bool dump = false;
 void processInput(GLFWwindow *window) {
 	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
 		glfwSetWindowShouldClose(window, true);
@@ -61,6 +62,8 @@ void processInput(GLFWwindow *window) {
 		camera.KeyBoardMovement(RIGHTWARD);
 	if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS)
 		global_reset = true;
+	if (glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS)
+		dump = true;
 	if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS)
 		camera.MouseSensitivity += (float)0.002;
 	if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)
@@ -129,8 +132,8 @@ int main(void) {
 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 	glfwSetCursorPosCallback(window, mouse_callback);
 
-	
-	ParticleSystem tester(num, 64);
+	int3 gridSize = make_int3(8, 8, 8);
+	ParticleSystem tester(0.00415f, num, gridSize);
 	tester.resetGrid();
 	std::cout << "here" << std::endl;
 	while (!glfwWindowShouldClose(window))
@@ -149,7 +152,17 @@ int main(void) {
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		tester.draw(omyShader);
-		tester.update(0.0083);
+		tester.update();
+		if (dump) {
+			std::cout << "================================" << std::endl;
+			tester.dumpNeighbors();
+			std::cout << "================================" << std::endl;
+			//tester.dumpDeltaPosition();
+			std::cout << "================================" << std::endl;
+			//tester.dumpParticles(0, 50);
+			std::cout << "================================" << std::endl;
+			dump = false;
+		}
 		//draw
 		/*omyShader.use();
 		setCamera(omyShader);

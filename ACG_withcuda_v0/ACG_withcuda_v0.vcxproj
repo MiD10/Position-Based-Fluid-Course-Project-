@@ -273,7 +273,6 @@
     <ClInclude Include="include\GL\wglew.h" />
     <ClInclude Include="include\helper_cuda.h" />
     <ClInclude Include="include\helper_string.h" />
-    <ClInclude Include="include\MoonSystem.h" />
     <ClInclude Include="include\mycamera.h" />
     <ClInclude Include="include\myinclude.h" />
     <ClInclude Include="include\mymesh.h" />

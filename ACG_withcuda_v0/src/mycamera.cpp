@@ -1,11 +1,11 @@
 #include "../include/mycamera.h"
 
-MyCamera::MyCamera():cameraPos(glm::vec3(0.0f,0.0f, 5.0f)),
+MyCamera::MyCamera():cameraPos(glm::vec3(0.0f,0.0f, 3.0f)),
 cameraFront(glm::vec3(0.0f, 0.0f, -1.0f)),
 cameraUp(glm::vec3(0.0f, 1.0f, 0.0f)),
 lastX(SCR_WIDTH / 2), lastY(SCR_HEIGHT / 2),
 yaw(-90), pitch(0),
-MouseSensitivity(0.05), CameraSensitivity(0.5),
+MouseSensitivity(0.05), CameraSensitivity(5),
 firstMouse(true){
 }
 
