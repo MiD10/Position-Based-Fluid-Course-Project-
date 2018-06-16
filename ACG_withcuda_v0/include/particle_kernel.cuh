@@ -6,6 +6,8 @@
 // simulation parameters
 struct SimParams
 {
+	float deltaTime;
+
 	float3 colliderPos;
 	float  colliderRadius;
 
@@ -13,10 +15,10 @@ struct SimParams
 	float globalDamping;
 	float particleRadius;
 
-	unsigned int gridSize;
-	unsigned int numCells;
-	float3 worldOrigin;
-	float cellSize;
+	int3 gridSize;
+	unsigned int number_grid_cells;
+	float3 cellSize;
+	float3 worldBounds;
 
 	unsigned int numBodies;
 	unsigned int maxParticlesPerCell;

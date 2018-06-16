@@ -85,36 +85,10 @@ unsigned int createVBO(unsigned int size)
 
 //========================================================================
 //class funcitons:========================================================
-ParticleSystem::ParticleSystem(unsigned int number_of_particles, unsigned int gridSize){
-	//param setting
-	number = number_of_particles;
-	params.numBodies = number;
-	params.worldOrigin = make_float3(-6.4f, -6.4f, -6.4f);
-
-	host_force = host_Position = host_Velocity = NULL;
-	device_force = device_Velocity = NULL;
-	params.boundaryDamping = -0.5f;	//new_velocity = velocity * boundaryDamping when bouncing to the wall|floor
-	params.gravity = make_float3(0.0f, -9.8f, 0.0f);
-	params.globalDamping = 1.0f; //everytime update(), new_velocity = velocity * globalDamping
-	params.spring = 0.5f;
-	params.damping = 0.02f;
-	params.shear = 0.1f;
-	params.attraction = 0.0f;
-	params.particleRadius = 0.1f; //particle radius
-
-	//collision
-	//params.colliderPos = make_float3(-1.2f, -0.8f, 0.8f);
-	//params.colliderRadius = 0.2f;
-
-	//grids&cells
-	number_grid_cells = gridSize * gridSize * gridSize;
-
-	params.gridSize = gridSize;
-	params.numCells = number_grid_cells;
-	params.cellSize = params.particleRadius * 2.0f;
-
-
-	
+ParticleSystem::ParticleSystem(SimParams& temp){
+	params = temp;
+	number = params.numBodies;
+	number_grid_cells = params.number_grid_cells;
 	//(memory) initialize
 	initialize();
 }
@@ -182,9 +156,9 @@ void ParticleSystem::resetRandom(void) { //first edition, alllll random
 	std::cout << "Particle resetting..." << std::endl;
 	int p = 0, v = 0;
 	for (int i = 0; i < number; i++) {
-		host_Position[p++] = 2 * (rand() / (float)RAND_MAX - 0.5);
-		host_Position[p++] = 2 * (rand() / (float)RAND_MAX - 0.5);
-		host_Position[p++] = 2 * (rand() / (float)RAND_MAX - 0.5);
+		host_Position[p++] = params.worldBounds.x * (rand() / (float)RAND_MAX);
+		host_Position[p++] = params.worldBounds.y * (rand() / (float)RAND_MAX);
+		host_Position[p++] = params.worldBounds.z * (rand() / (float)RAND_MAX);
 		host_Position[p++] = 1.0f;
 		host_Velocity[v++] = 2 * (rand() / (float)RAND_MAX - 0.5);
 		host_Velocity[v++] = 2 * (rand() / (float)RAND_MAX - 0.5);
@@ -219,9 +193,9 @@ void ParticleSystem::resetGrid() {
 			for (unsigned int x = 0; x < size; x++, i++) {
 				if (i < params.numBodies) {
 					//printf("%d, %d, %d, %d\n", i, x, y, z);
-					host_Position[i * 4] = (spacing * x) + params.particleRadius - 1.0f + 2 * (rand() / (float)RAND_MAX - 0.5) * jitter;
-					host_Position[i * 4 + 1] = (spacing * y) + params.particleRadius - 1.0f + 2 * (rand() / (float)RAND_MAX - 0.5) * jitter;
-					host_Position[i * 4 + 2] = (spacing * z) + params.particleRadius - 1.0f + 2 * (rand() / (float)RAND_MAX - 0.5) * jitter;
+					host_Position[i * 4] = (spacing * x) + params.particleRadius + 2 * (rand() / (float)RAND_MAX - 0.5) * jitter;
+					host_Position[i * 4 + 1] = (spacing * y) + params.particleRadius + 2 * (rand() / (float)RAND_MAX - 0.5) * jitter;
+					host_Position[i * 4 + 2] = (spacing * z) + params.particleRadius + 2 * (rand() / (float)RAND_MAX - 0.5) * jitter;
 					host_Position[i * 4 + 3] = 1.0f;
 
 					host_Velocity[i * 4] = 0.0f;
@@ -259,7 +233,7 @@ void ParticleSystem::resetGrid() {
 }
 
 int cccc = 0;
-void ParticleSystem::update(float deltaTime) {
+void ParticleSystem::update() {
 
 	device_Position = (float*)mapGLBufferObject(&cuda_posvbo_resource);
 	
@@ -267,7 +241,7 @@ void ParticleSystem::update(float deltaTime) {
 
 	//calculate position and new velocity using GPU
 	// integrate
-	integrateSystem(device_Position, device_Velocity, deltaTime, number);
+	integrateSystem(device_Position, device_Velocity, params.deltaTime, number);
 
 	//every time calculate grid hash from scratch
 	calcHash(device_grid_particle_hash, device_grid_particle_index, device_Position, number);

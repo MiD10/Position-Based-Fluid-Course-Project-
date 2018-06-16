@@ -43,6 +43,34 @@ void setCamera(MyShader omyShader) {
 	omyShader.setMat4("projection", projection);
 }
 
+void setParams(SimParams& params, int number) {
+	//param setting
+	params.deltaTime = 0.5f;
+	params.numBodies = number;
+	params.particleRadius = 1.f / 64.f; //particle radius
+	params.gridSize = make_int3(64,64,64);
+	params.number_grid_cells = params.gridSize.x * params.gridSize.y * params.gridSize.z;
+	params.cellSize = make_float3(params.particleRadius * 2.0f, params.particleRadius * 2.0f, params.particleRadius * 2.0f);
+	params.worldBounds = make_float3(
+		params.gridSize.x * params.particleRadius,
+		params.gridSize.y * params.particleRadius,
+		params.gridSize.z * params.particleRadius);
+
+	params.boundaryDamping = -0.f;	//new_velocity = velocity * boundaryDamping when bouncing to the wall|floor
+	params.gravity = make_float3(0.0f, -0.0003f, 0.0f);
+	params.globalDamping = 1.0f; //everytime update(), new_velocity = velocity * globalDamping
+
+	//collision
+	//params.colliderPos = make_float3(-1.2f, -0.8f, 0.8f);
+	//params.colliderRadius = 0.2f;
+	params.spring = 0.5f;
+	params.damping = 0.02f;
+	params.shear = 0.1f;
+	params.attraction = 0.0f;
+
+	
+}
+
 
 // process all input: query GLFW whether relevant keys are pressed/released this frame and react accordingly
 // ---------------------------------------------------------------------------------------------------------
@@ -129,8 +157,10 @@ int main(void) {
 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 	glfwSetCursorPosCallback(window, mouse_callback);
 
-	
-	ParticleSystem tester(num, 64);
+	SimParams temp;
+	setParams(temp, num);
+	ParticleSystem tester(temp);
+
 	tester.resetGrid();
 	std::cout << "here" << std::endl;
 	while (!glfwWindowShouldClose(window))
@@ -149,7 +179,7 @@ int main(void) {
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		tester.draw(omyShader);
-		tester.update(0.0083);
+		tester.update();
 		//draw
 		/*omyShader.use();
 		setCamera(omyShader);

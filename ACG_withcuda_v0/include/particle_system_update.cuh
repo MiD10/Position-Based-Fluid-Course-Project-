@@ -51,41 +51,41 @@ struct integrate_functor
 		// set this to zero to disable collisions with cube sides
 #if 1
 
-		if (pos.x > 6.4f - params.particleRadius)
+		if (pos.x > params.worldBounds.x - params.particleRadius)
 		{
-			pos.x = 6.4f - params.particleRadius;
+			pos.x = params.worldBounds.x - params.particleRadius;
 			vel.x *= params.boundaryDamping;
 		}
 
-		if (pos.x < -6.4f + params.particleRadius)
+		if (pos.x < 0.f + params.particleRadius)
 		{
-			pos.x = -6.4f + params.particleRadius;
+			pos.x = 0.f + params.particleRadius;
 			vel.x *= params.boundaryDamping;
 		}
 
-		if (pos.y > 6.4f - params.particleRadius)
+		if (pos.y > params.worldBounds.y - params.particleRadius)
 		{
-			pos.y = 6.4f - params.particleRadius;
+			pos.y = params.worldBounds.y - params.particleRadius;
 			vel.y *= params.boundaryDamping;
 		}
 
-		if (pos.z > 6.4f - params.particleRadius)
+		if (pos.z > params.worldBounds.z - params.particleRadius)
 		{
-			pos.z = 6.4f - params.particleRadius;
+			pos.z = params.worldBounds.z - params.particleRadius;
 			vel.z *= params.boundaryDamping;
 		}
 
-		if (pos.z < -6.4f + params.particleRadius)
+		if (pos.z < 0.f + params.particleRadius)
 		{
-			pos.z = -6.4f + params.particleRadius;
+			pos.z = 0.f + params.particleRadius;
 			vel.z *= params.boundaryDamping;
 		}
 
 #endif
 
-		if (pos.y < -6.4f + params.particleRadius)
+		if (pos.y < 0.f + params.particleRadius)
 		{
-			pos.y = -6.4f + params.particleRadius;
+			pos.y = 0.f + params.particleRadius;
 			vel.y *= params.boundaryDamping;
 		}
 
@@ -99,19 +99,19 @@ struct integrate_functor
 __device__ int3 calcGridPos(float3 p)
 {
 	int3 gridPos;
-	gridPos.x = floor((p.x - params.worldOrigin.x) / params.cellSize);
-	gridPos.y = floor((p.y - params.worldOrigin.y) / params.cellSize);
-	gridPos.z = floor((p.z - params.worldOrigin.z) / params.cellSize);
+	gridPos.x = floor(p.x / params.cellSize.x);
+	gridPos.y = floor(p.y / params.cellSize.y);
+	gridPos.z = floor(p.z / params.cellSize.z);
 	return gridPos;
 }
 
 // calculate address in grid from position (clamping to edges)
 __device__ uint calcGridHash(int3 gridPos)
 {
-	gridPos.x = gridPos.x & (params.gridSize - 1);  // wrap grid, assumes size is power of 2
-	gridPos.y = gridPos.y & (params.gridSize - 1);
-	gridPos.z = gridPos.z & (params.gridSize - 1);
-	return gridPos.z * params.gridSize * params.gridSize + gridPos.y * params.gridSize + gridPos.x;
+	gridPos.x = gridPos.x & (params.gridSize.x - 1);  // wrap grid, assumes size is power of 2
+	gridPos.y = gridPos.y & (params.gridSize.y - 1);
+	gridPos.z = gridPos.z & (params.gridSize.z - 1);
+	return gridPos.z * params.gridSize.x * params.gridSize.y + gridPos.y * params.gridSize.x + gridPos.x;
 }
 
 // calculate grid hash value for each particle

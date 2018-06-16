@@ -23,7 +23,7 @@ using namespace std;
 
 class ParticleSystem {
 public:
-	ParticleSystem(unsigned int number_of_particles, unsigned int gridSize);
+	ParticleSystem(SimParams& temp);
 
 	unsigned int number;
 	unsigned int number_grid_cells;
@@ -73,7 +73,7 @@ public:
 	
 	void resetRandom(void); //reset all the particles's position and velocity randomly
 	void resetGrid(void); //
-	void update(float deltaTime);
+	void update(void);
 
 	void createPosVBO(unsigned int size);
 	//void createColorVBO(unsigned int size);
