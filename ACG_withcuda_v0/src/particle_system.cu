@@ -131,8 +131,12 @@ extern "C" {
 				);
 
 			getLastCudaError("Kernel execution failed");
-			updatePositionD <<< numBlocks, numThreads >>>(
+			updatePositionD <<< numBlocks, numThreads >>> (
 				(float4 *)particleDeltaPos,
+				(float4 *)newPos);
+
+			getLastCudaError("Kernel execution failed");
+			confinePositionD <<< numBlocks, numThreads >>>(
 				(float4 *)newPos
 				);
 		}
@@ -141,6 +145,8 @@ extern "C" {
 		updateVelocity <<< numBlocks, numThreads >>> (
 			(float4 *)oldPos,
 			(float4 *)newPos,
+			neighbors,
+			neighbors_count,
 			(float4 *)Vel
 			);
 		//check if kernel invocation generated an error

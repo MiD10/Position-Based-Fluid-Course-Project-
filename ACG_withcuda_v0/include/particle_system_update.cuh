@@ -76,6 +76,17 @@ float3 Wspiky(
 	}
 }
 
+__device__
+float Scorr(
+	float3 i,
+	float3 j
+)
+{
+	float temp = Wpoly6(i, j) / params.s_corr;
+	float s_corr = -1 * params.s_corr_k * temp * temp * temp * temp;
+	return s_corr;
+}
+
 __global__
 void updatePositionD(
 	float4* oldPos,
@@ -285,7 +296,10 @@ void getDpD(
 		int offset = index * params.maxNeighborsPerParticle;
 		for (int i = 0; i < neighbors_count[index]; i++) {
 			float3 temp = Wspiky(make_float3(newPos[index]), make_float3(newPos[neighbors[offset + i]]));
-			dP += (lamda[index] + lamda[neighbors[offset + i]]) * temp;
+			float scorr = Scorr(make_float3(newPos[index]), make_float3(newPos[neighbors[offset + i]]));
+			dP += (lamda[index] + lamda[neighbors[offset + i]] + scorr) * temp;
+			/*if(params.switcher && (scorr - 0) >= 0.0001)
+				printf("lamda1:%f, lamda2:%f, scorr:%f\n", lamda[index], lamda[neighbors[offset + i]], scorr);*/
 		}
 	}
 	deltaPos[index] = make_float4(dP / params.restDensity, 0.f);
@@ -304,16 +318,88 @@ void updatePositionD(
 }
 
 __global__
+void confinePositionD(
+	float4* newPos
+) 
+{
+	uint index = blockIdx.x * blockDim.x + threadIdx.x;
+	if (index >= params.numBodies) return;
+
+	float3 pos = make_float3(newPos[index]);
+
+	if (pos.x < 0) {
+		pos.x = 0.001f;
+	}
+	else if (pos.x > params.worldbound.x) {
+		pos.x = params.worldbound.x - 0.001f;
+	}
+
+	if (pos.y < 0) {
+		pos.y = 0.001f;
+	}
+	else if (pos.y > params.worldbound.y) {
+		pos.y = params.worldbound.y - 0.001f;
+	}
+
+	if (pos.z < 0) {
+		pos.z = 0.001f;
+	}
+	else if (pos.z > params.worldbound.z) {
+		pos.z = params.worldbound.z - 0.001f;
+	}
+
+	newPos[index] = make_float4(pos, 1.0f);
+}
+
+__global__
 void updateVelocity(
 	float4* oldPos,
 	float4* newPos,
+	uint*	neighbors,
+	uint*	neighbors_count,
 	float4* vel
 )
 {
 	uint index = blockIdx.x * blockDim.x + threadIdx.x;
 	if (index >= params.numBodies) return;
-
+	int offset = index * params.maxNeighborsPerParticle;
 	vel[index] = make_float4((make_float3(newPos[index]) - make_float3(oldPos[index])) / params.deltaTime, 0.f);
+
+	//vorticity confinement
+	float3 w = make_float3(0.f);
+	if (neighbors_count[index]) {
+		for (int i = 0; i < neighbors_count[index]; i++) {
+			float3 temp = Wspiky(make_float3(newPos[index]), make_float3(newPos[neighbors[offset + i]]));
+			w += cross(make_float3((vel[neighbors[offset + i]] - vel[index])),temp);
+		}
+	}
+	float lenW = length(w);
+	float3 vorticityForce = make_float3(0.f);
+	if (lenW != 0.f) {	//as the paper said, only add when exit
+		float3 eta = make_float3(0.0f);
+		for (int i = 0; i < neighbors_count[index]; i++) {
+			eta += Wspiky(make_float3(newPos[index]), make_float3(newPos[neighbors[offset + i]]));
+		}
+		eta *= lenW;
+		float lenE = length(eta);
+		if (lenE != 0.0f) {
+			float3 N = eta / lenE;
+			float3 vorticityForce = cross(N, w); //in paper:E(N x Wi)
+			float3 deltaV = vorticityForce * params.deltaTime *0.0001;
+			vel[index] += make_float4(deltaV, 0.f);
+		}
+	}
+	//XSPH
+	vorticityForce = make_float3(0.f);
+	if (neighbors_count[index]) {
+		int offset = index * params.maxNeighborsPerParticle;
+		for (int i = 0; i < neighbors_count[index]; i++) {
+			float temp = Wpoly6(make_float3(newPos[index]), make_float3(newPos[neighbors[offset + i]]));
+			vorticityForce += make_float3((vel[neighbors[offset + i]] - vel[index])) * temp;
+		}
+	}
+	vel[index] += make_float4(vorticityForce * params.deltaTime * 0.01f, 0.f);
+	
 
 	oldPos[index] = newPos[index];
 }

@@ -97,7 +97,14 @@ ParticleSystem::ParticleSystem(float dT, unsigned int number_of_particles, int3 
 	params.spiky = 45.f / (M_PI *  pow(params.kernelRadius, 6));
 	params.numIterations = 4;
 	params.relaxation = 600.f;
+	params.s_corr_dq = 0.03f;
+	params.s_corr_k = 0.00001f;
+	params.s_corr_n = 4;
+	params.s_corr = params.poly6 * pow((params.kernelRadius * params.kernelRadius - params.s_corr_dq * params.s_corr_dq), 3);
 
+	//debug
+	params.switcher = false;
+	params.tunning = 0.0033f;
 	//collision
 	//params.colliderPos = make_float3(-1.2f, -0.8f, 0.8f);
 	//params.colliderRadius = 0.2f;
@@ -221,10 +228,9 @@ void ParticleSystem::resetGrid() {
 				if (i < params.numBodies) {
 					//printf("%d, %d, %d, %d\n", i, x, y, z);
 					host_Position[i * 4] = (spacing * x) + gridRadius + 2 * (rand() / (float)RAND_MAX - 0.5) * jitter;
-					host_Position[i * 4 + 1] = (spacing * y) + gridRadius + 2 * (rand() / (float)RAND_MAX - 0.5) * jitter;
+					host_Position[i * 4 + 1] = ((spacing * y) + gridRadius + 2 * (rand() / (float)RAND_MAX - 0.5) * jitter);
 					host_Position[i * 4 + 2] = (spacing * z) + gridRadius + 2 * (rand() / (float)RAND_MAX - 0.5) * jitter;
 					host_Position[i * 4 + 3] = 1.0f;
-
 					host_Velocity[i * 4] = 0.0f;
 					host_Velocity[i * 4 + 1] = 0.0f;
 					host_Velocity[i * 4 + 2] = 0.0f;

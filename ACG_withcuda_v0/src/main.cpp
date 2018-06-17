@@ -232,7 +232,8 @@ int main(void) {
 		//printf("%lf per frame", timer.elapsed());
 
 		if (dump) {
-			//std::cout << "================================" << std::endl;
+			std::cout << "================================" << std::endl;
+			tester.params.switcher = true;
 			//tester.dumpNeighbors();
 			//std::cout << "================================" << std::endl;
 			//tester.dumpDeltaPosition();
@@ -241,7 +242,7 @@ int main(void) {
 			//tester.dumpParticles(0, 50);
 			//std::cout << "================================" << std::endl;
 			//dump = false;
-			system("pause");
+			//system("pause");
 		}
 		//draw
 		/*omyShader.use();
@@ -263,10 +264,10 @@ int main(void) {
 		// glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
 		// -------------------------------------------------------------------------------
 		glfwSwapBuffers(window);
-		itoa(counter++, name, 10);
-		std::string _name = "picture//" + std::string(name);
-		_name += ".ppm";
-		saveFrameBuff(_name.c_str(), SCR_WIDTH, SCR_HEIGHT);
+		//itoa(counter++, name, 10);
+		//std::string _name = "picture//" + std::string(name);
+		//_name += ".ppm";
+		//saveFrameBuff(_name.c_str(), SCR_WIDTH, SCR_HEIGHT);
 		glfwPollEvents();
 	}
 

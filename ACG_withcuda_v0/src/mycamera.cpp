@@ -10,7 +10,7 @@ firstMouse(true) {
 }
 
 void MyCamera::KeyBoardMovement(int Direction) {
-	float cameraSpeed = 0.05f; // adjust accordingly
+	float cameraSpeed = 0.3f; // adjust accordingly
 	switch (Direction) {
 	case FORWARD: cameraPos += cameraSpeed * cameraFront; break;
 	case BACKWARD: cameraPos -= cameraSpeed * cameraFront; break;

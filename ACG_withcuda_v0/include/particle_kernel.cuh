@@ -36,6 +36,14 @@ struct SimParams
 	float relaxation;
 	float poly6;
 	float spiky;
+	float s_corr_k;
+	float s_corr_dq;
+	float s_corr;
+	unsigned int s_corr_n;
+
+	//debug
+	bool switcher;
+	float tunning;
 };
 
 #endif
