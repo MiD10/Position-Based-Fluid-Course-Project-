@@ -21,6 +21,8 @@
 
 #include "../include/particle_system.h"
 
+#include <chrono>
+
 using namespace std;
 
 //opengl
@@ -64,6 +66,11 @@ void processInput(GLFWwindow *window) {
 		global_reset = true;
 	if (glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS)
 		dump = true;
+	if (glfwGetKey(window, GLFW_KEY_C) == GLFW_PRESS)
+		printf("camera position = (%f, %f, %f)\ncamera front = (%f, %f, %f)\nyaw = (%f), pitch = (%f)\n-------\n",
+			camera.cameraPos.x, camera.cameraPos.y, camera.cameraPos.z,
+			camera.cameraFront.x, camera.cameraFront.y, camera.cameraFront.z,
+			camera.yaw, camera.pitch);
 	if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS)
 		camera.MouseSensitivity += (float)0.002;
 	if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)
@@ -80,6 +87,68 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
 	// make sure the viewport matches the new window dimensions; note that width and 
 	// height will be significantly larger than specified on retina displays.
 	glViewport(0, 0, width, height);
+}
+
+//Timer
+class Timer {
+public:
+	Timer() :
+		m_beg(clock_::now()) {
+	}
+	void reset() {
+		m_beg = clock_::now();
+	}
+
+	double elapsed() const {
+		return std::chrono::duration_cast<std::chrono::milliseconds>(
+			clock_::now() - m_beg).count();
+	}
+
+private:
+	typedef std::chrono::high_resolution_clock clock_;
+	typedef std::chrono::duration<double, std::ratio<1> > second_;
+	std::chrono::time_point<clock_> m_beg;
+};
+
+//write to ppm
+void saveFrameBuff(const char *name, int W, int H)
+{
+	FILE   *out = fopen(name, "w");
+	char*  pixel_data = (char*)malloc(sizeof(char) * 3 * W * H);
+
+	glReadBuffer(GL_FRONT);
+	glReadPixels(0, 0, W, H, GL_RGB, GL_UNSIGNED_BYTE, pixel_data);
+
+	// invert pixels (stolen from SOILs source code)
+	for (int j = 0; j * 2 < H; ++j) {
+		int x = j * W * 3;
+		int y = (H - 1 - j) * W * 3;
+		for (int i = W * 3; i > 0; --i) {
+			uint8_t tmp = pixel_data[x];
+			pixel_data[x] = pixel_data[y];
+			pixel_data[y] = tmp;
+			++x;
+			++y;
+		}
+	}
+
+	int i, j;
+	FILE *fp = fopen(name, "wb"); /* b - binary mode */
+	(void)fprintf(fp, "P6\n%d %d\n255\n", W, H);
+	for (j = 0; j < H; ++j)
+	{
+		for (i = 0; i < W; ++i)
+		{
+			static unsigned char color[3];
+			color[0] = pixel_data[3 * i + 3 * j*W];  /* red */
+			color[1] = pixel_data[3 * i + 3 * j*W + 1];  /* green */
+			color[2] = pixel_data[3 * i + 3 * j*W + 2];  /* blue */
+			(void)fwrite(color, 1, 3, fp);
+		}
+	}
+	(void)fclose(fp);
+
+	free(pixel_data);
 }
 
 int main(void) {
@@ -132,11 +201,15 @@ int main(void) {
 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 	glfwSetCursorPosCallback(window, mouse_callback);
 
-	int3 gridSize = make_int3(68, 48, 88);
+	int3 gridSize = make_int3(64, 44, 80);
 	ParticleSystem tester(0.0083f, num, gridSize);
+	int step = 4;
 	tester.resetGrid();
 	//tester.dumpNeighbors();
 	std::cout << "here" << std::endl;
+	Timer timer;
+	int counter = 0;
+	char* name;
 	while (!glfwWindowShouldClose(window))
 	{
 		if (global_reset) {
@@ -153,15 +226,18 @@ int main(void) {
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		tester.draw(omyShader);
-		tester.update();
-		
+		//timer.reset();
+		for (int i = 0; i < step; i++)
+			tester.update();
+		//printf("%lf per frame", timer.elapsed());
+
 		if (dump) {
-			std::cout << "================================" << std::endl;
+			//std::cout << "================================" << std::endl;
 			//tester.dumpNeighbors();
 			//std::cout << "================================" << std::endl;
 			//tester.dumpDeltaPosition();
-			tester.dumpDensity_Lamda();
-			std::cout << "================================" << std::endl;
+			//tester.dumpDensity_Lamda();
+			//std::cout << "================================" << std::endl;
 			//tester.dumpParticles(0, 50);
 			//std::cout << "================================" << std::endl;
 			//dump = false;
@@ -174,19 +250,23 @@ int main(void) {
 		omyShader.setFloat("pointScale", SCR_HEIGHT / tanf(45.f*0.5f*(float)3.14159 / 180.0f));
 		omyShader.setFloat("pointRadius", 0.5);
 		omyShader.setMat4("model", model);*/
-		
+
 		/*for (int i = 0; i < omyMS.objects.size(); i++) {
-			glm::mat4 model(1.0f);
-			model = glm::translate(model, omyMS.objects[i].position);
-			model = glm::scale(model, glm::vec3(omyMS.objects[i].scale));
-			omyShader.setMat4("model", model);
-			omyModel.Draw(omyShader);
+		glm::mat4 model(1.0f);
+		model = glm::translate(model, omyMS.objects[i].position);
+		model = glm::scale(model, glm::vec3(omyMS.objects[i].scale));
+		omyShader.setMat4("model", model);
+		omyModel.Draw(omyShader);
 		}*/
 
 
 		// glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
 		// -------------------------------------------------------------------------------
 		glfwSwapBuffers(window);
+		itoa(counter++, name, 10);
+		std::string _name = "picture//" + std::string(name);
+		_name += ".ppm";
+		saveFrameBuff(_name.c_str(), SCR_WIDTH, SCR_HEIGHT);
 		glfwPollEvents();
 	}
 

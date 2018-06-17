@@ -24,7 +24,7 @@ void colorRamp(float t, float *r) {
 	const int ncolors = 7;
 	float c[ncolors][3] =
 	{
-	{ 1.0, 0.0, 0.0, },
+		{ 1.0, 0.0, 0.0, },
 	{ 1.0, 0.5, 0.0, },
 	{ 1.0, 1.0, 0.0, },
 	{ 0.0, 1.0, 0.0, },
@@ -66,7 +66,7 @@ unsigned int createVBO(unsigned int size)
 
 //========================================================================
 //class funcitons:========================================================
-ParticleSystem::ParticleSystem(float dT, unsigned int number_of_particles, int3 gridSize){
+ParticleSystem::ParticleSystem(float dT, unsigned int number_of_particles, int3 gridSize) {
 	//param setting
 	number = number_of_particles;
 	params.deltaTime = dT;
@@ -84,9 +84,9 @@ ParticleSystem::ParticleSystem(float dT, unsigned int number_of_particles, int3 
 	//params.boundaryDamping = 0.f;	//new_velocity = velocity * boundaryDamping when bouncing to the wall|floor
 	params.gravity = make_float3(0.0f, -9.8f, 0.0f);
 	//params.globalDamping = 1.0f; //everytime update(), new_velocity = velocity * globalDamping
-	
+
 	//collision
-	params.particleRadius = 1.f / 64.f; //particle radius
+	params.particleRadius = 0.05f; //particle radius
 	params.maxNeighborsPerParticle = 50;
 	params.maxParticlesPerCell = 50;
 
@@ -103,7 +103,7 @@ ParticleSystem::ParticleSystem(float dT, unsigned int number_of_particles, int3 
 	//params.colliderRadius = 0.2f;
 
 
-	
+
 	//(memory) initialize
 	initialize();
 }
@@ -137,7 +137,7 @@ void ParticleSystem::initialize() {
 	allocateArray((void **)&device_neighbors_count, number * sizeof(unsigned int));
 	allocateArray((void **)&device_cells, number_grid_cells * params.maxParticlesPerCell * sizeof(unsigned int));
 	allocateArray((void **)&device_cells_count, number_grid_cells * sizeof(unsigned int));
-	
+
 
 	unsigned int memSize = sizeof(float) * 4 * number;
 
@@ -171,7 +171,7 @@ void ParticleSystem::initialize() {
 		ptr += 3;
 #endif
 		*ptr++ = 1.0f;
-}
+	}
 	glUnmapBuffer(GL_ARRAY_BUFFER);
 
 	//params
@@ -179,7 +179,7 @@ void ParticleSystem::initialize() {
 }
 
 void ParticleSystem::resetRandom(void) { //first edition, alllll random
-	//std::cout << "Particle resetting..." << std::endl;
+										 //std::cout << "Particle resetting..." << std::endl;
 	int p = 0, v = 0;
 	for (int i = 0; i < number; i++) {
 		host_Position[p++] = params.gridSize.x * 2 * (rand() / (float)RAND_MAX - 0.5);
@@ -212,16 +212,17 @@ void ParticleSystem::resetGrid() {
 	unsigned int i = 0;
 	unsigned int size = (int)ceilf(powf((float)params.numBodies, 1.0f / 3.0f));
 	//unsigned int size = params.gridSize;
-	float spacing = params.kernelRadius * 2.0f;
-	float jitter = params.kernelRadius * 0.01f;
+	float gridRadius = params.kernelRadius / 2.0f;
+	float spacing = gridRadius * 2.0f;
+	float jitter = gridRadius * 0.01f;
 	for (unsigned int z = 0; z < size; z++) {
 		for (unsigned int y = 0; y < size; y++) {
 			for (unsigned int x = 0; x < size; x++, i++) {
 				if (i < params.numBodies) {
 					//printf("%d, %d, %d, %d\n", i, x, y, z);
-					host_Position[i * 4] = (spacing * x) + params.kernelRadius + 2 * (rand() / (float)RAND_MAX - 0.5) * jitter;
-					host_Position[i * 4 + 1] = (spacing * y) + params.kernelRadius + 2 * (rand() / (float)RAND_MAX - 0.5) * jitter;
-					host_Position[i * 4 + 2] = (spacing * z) + params.kernelRadius + 2 * (rand() / (float)RAND_MAX - 0.5) * jitter;
+					host_Position[i * 4] = (spacing * x) + gridRadius + 2 * (rand() / (float)RAND_MAX - 0.5) * jitter;
+					host_Position[i * 4 + 1] = (spacing * y) + gridRadius + 2 * (rand() / (float)RAND_MAX - 0.5) * jitter;
+					host_Position[i * 4 + 2] = (spacing * z) + gridRadius + 2 * (rand() / (float)RAND_MAX - 0.5) * jitter;
 					host_Position[i * 4 + 3] = 1.0f;
 
 					host_Velocity[i * 4] = 0.0f;
@@ -260,8 +261,8 @@ int cccc = 0;
 void ParticleSystem::update(void) {
 
 	device_Position = (float*)mapGLBufferObject(&cuda_posvbo_resource);
-	
-	//setParameters(&params);
+
+	setParameters(&params);
 
 	update_fluid(
 		device_Velocity,
@@ -299,23 +300,23 @@ void ParticleSystem::draw(MyShader& omyShader) {
 }
 
 //debugging
-void ParticleSystem::dumpParticles(unsigned int start, unsigned int count){
+void ParticleSystem::dumpParticles(unsigned int start, unsigned int count) {
 	// debug
 	copyArrayFromDevice(host_Position, 0, &cuda_posvbo_resource, sizeof(float) * 4 * count);
 	copyArrayFromDevice(host_Velocity, device_Velocity, 0, sizeof(float) * 4 * count);
 
-	for (uint i = start; i<start + count; i++){
+	for (uint i = start; i<start + count; i++) {
 		printf("%d: ", i);
 		printf("pos: (%.4f, %.4f, %.4f, %.4f)\n", host_Position[i * 4 + 0], host_Position[i * 4 + 1], host_Position[i * 4 + 2], host_Position[i * 4 + 3]);
 		printf("vel: (%.4f, %.4f, %.4f, %.4f)\n", host_Velocity[i * 4 + 0], host_Velocity[i * 4 + 1], host_Velocity[i * 4 + 2], host_Velocity[i * 4 + 3]);
 	}
 }
 
-void ParticleSystem::dumpDensity_Lamda(){
+void ParticleSystem::dumpDensity_Lamda() {
 	// dump grid information
 	copyArrayFromDevice(host_density, device_density, 0, sizeof(float)*number);
 	copyArrayFromDevice(host_lamda, device_lamda, 0, sizeof(float)*number);
-	for (uint i = 0; i<number; i++){
+	for (uint i = 0; i<number; i++) {
 		printf("Density = %f | Lamda = %f\n", host_density[i], host_lamda[i]);
 	}
 
@@ -335,10 +336,10 @@ void ParticleSystem::dumpLamda() {
 
 void ParticleSystem::dumpDeltaPosition() {
 	// dump grid information
-	copyArrayFromDevice(host_delta_Position, device_delta_Position, 0, sizeof(float)*number*4);
+	copyArrayFromDevice(host_delta_Position, device_delta_Position, 0, sizeof(float)*number * 4);
 
-	for (uint i = 0; i<number; i+=4) {
-		printf("%f, %f, %f, %f\n", host_delta_Position[i], host_delta_Position[i+1], host_delta_Position[i+2], host_delta_Position[i+3]);
+	for (uint i = 0; i<number; i += 4) {
+		printf("%f, %f, %f, %f\n", host_delta_Position[i], host_delta_Position[i + 1], host_delta_Position[i + 2], host_delta_Position[i + 3]);
 	}
 
 	return;
@@ -350,7 +351,7 @@ void ParticleSystem::dumpNeighbors() {
 	copyArrayFromDevice(host_neighbors, device_neighbors, 0, sizeof(unsigned int)*number*params.maxNeighborsPerParticle);
 
 
-	for (int i = 0; i<number; i ++) {
+	for (int i = 0; i<number; i++) {
 		if (host_neighborsCount[i]) {
 			printf("index %d has %d neighbors:\n", i, host_neighborsCount[i]);
 			for (int j = 0; j < host_neighborsCount[i]; j++) {

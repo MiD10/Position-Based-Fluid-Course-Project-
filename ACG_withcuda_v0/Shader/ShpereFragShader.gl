@@ -18,9 +18,9 @@ void main()
 	N.z = sqrt(1.0-mag);
 	// calculate lighting
 	float diffuse = max(0.0, dot(lightDir, N));
-	vec3 eye = vec3 (0.0, 0.0, 1.0);
-	vec3 halfVector = normalize( eye + lightDir);
-	float spec = max( pow(dot(N,halfVector), Ns), 0.); 
-	vec4 S = light_specular*mat_specular* spec;
-	frag_colour = vec4(1.0f, 0.5f, 0.2f, 1.0f)*diffuse + S;
+	//vec3 eye = vec3 (0.0, 0.0, 1.0);
+	//vec3 halfVector = normalize( eye + lightDir);
+	//float spec = max( pow(dot(N,halfVector), Ns), 0.); 
+	//vec4 S = light_specular*mat_specular* spec;
+	frag_colour = vec4(0.0f, 0.6235f, 1.0f, 1.0f)*diffuse;
 };
