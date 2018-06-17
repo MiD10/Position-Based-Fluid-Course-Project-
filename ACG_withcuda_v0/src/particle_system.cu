@@ -85,65 +85,65 @@ extern "C" {
 			);
 
 		getLastCudaError("Kernel execution failed");
-		updateCells <<< grid_numBlocks, numThreads >>> (
+		updateCells <<< numBlocks, numThreads >>> (
 			(float4*)newPos,
 			cells,
 			cells_count
 			);
 
-		/*getLastCudaError("Kernel execution failed");
+		getLastCudaError("Kernel execution failed");
 		updateNeighbors <<< numBlocks, numThreads >>> (
 			(float4*)newPos,
 			cells,
 			cells_count,
 			neighbors,
 			neighbors_count
-			);*/
+			);
 
-		//getLastCudaError("Kernel execution failed");
-		//for (unsigned int i = 0; i < iters; i++) {
-		//	// get each particle's C(density)
-		//	getDensityD <<< numBlocks, numThreads >>>(
-		//		(float4 *)newPos,
-		//		neighbors,
-		//		neighbors_count,
-		//		particleDensity
-		//		);
+		getLastCudaError("Kernel execution failed");
+		for (unsigned int i = 0; i < iters; i++) {
+			// get each particle's C(density)
+			getDensityD <<< numBlocks, numThreads >>>(
+				(float4 *)newPos,
+				neighbors,
+				neighbors_count,
+				particleDensity
+				);
 
-		//	getLastCudaError("Kernel execution failed");
-		//	// get each particle's Lamda
-		//	getLamdaD <<< numBlocks, numThreads >>> (
-		//		(float4 *)newPos,
-		//		neighbors,
-		//		neighbors_count,
-		//		particleDensity,
-		//		particleLamda
-		//		);
+			getLastCudaError("Kernel execution failed");
+			// get each particle's Lamda
+			getLamdaD <<< numBlocks, numThreads >>> (
+				(float4 *)newPos,
+				neighbors,
+				neighbors_count,
+				particleDensity,
+				particleLamda
+				);
 
-		//	getLastCudaError("Kernel execution failed");
-		//	// get each particle's fixed position delta-p
-		//	getDpD <<< numBlocks, numThreads >>>(
-		//		(float4 *)newPos,
-		//		(float4 *)particleDeltaPos,
-		//		neighbors,
-		//		neighbors_count,
-		//		particleLamda
-		//		);
+			getLastCudaError("Kernel execution failed");
+			// get each particle's fixed position delta-p
+			getDpD <<< numBlocks, numThreads >>>(
+				(float4 *)newPos,
+				(float4 *)particleDeltaPos,
+				neighbors,
+				neighbors_count,
+				particleLamda
+				);
 
-		//	getLastCudaError("Kernel execution failed");
-		//	updatePositionD <<< numBlocks, numThreads >>>(
-		//		(float4 *)particleDeltaPos,
-		//		(float4 *)newPos
-		//		);
-		//}
+			getLastCudaError("Kernel execution failed");
+			updatePositionD <<< numBlocks, numThreads >>>(
+				(float4 *)particleDeltaPos,
+				(float4 *)newPos
+				);
+		}
 
-		//getLastCudaError("Kernel execution failed");
-		//updateVelocity <<< numBlocks, numThreads >>> (
-		//	(float4 *)oldPos,
-		//	(float4 *)newPos,
-		//	(float4 *)Vel
-		//	);
-		// check if kernel invocation generated an error
+		getLastCudaError("Kernel execution failed");
+		updateVelocity <<< numBlocks, numThreads >>> (
+			(float4 *)oldPos,
+			(float4 *)newPos,
+			(float4 *)Vel
+			);
+		//check if kernel invocation generated an error
 		getLastCudaError("Kernel execution failed");
 	}
 

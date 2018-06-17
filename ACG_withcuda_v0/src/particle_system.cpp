@@ -95,7 +95,7 @@ ParticleSystem::ParticleSystem(float dT, unsigned int number_of_particles, int3 
 	params.restDensity = 6378.0f; //restDensity
 	params.poly6 = 315.f / (64.f * M_PI * pow(params.kernelRadius, 9));
 	params.spiky = 45.f / (M_PI *  pow(params.kernelRadius, 6));
-	params.numIterations = 1;
+	params.numIterations = 4;
 	params.relaxation = 600.f;
 
 	//collision
@@ -114,7 +114,7 @@ void ParticleSystem::initialize() {
 	host_force = new float[number * 4];
 	host_Position = new float[number * 4];
 	host_Velocity = new float[number * 4];
-	/*host_density = new float[number];
+	host_density = new float[number];
 	host_lamda = new float[number];
 	host_delta_Position = new float[number * 4];
 	host_neighborsCount = new unsigned int[number];
@@ -131,7 +131,7 @@ void ParticleSystem::initialize() {
 	memset(host_neighbors, 0, number * sizeof(unsigned int) * params.maxNeighborsPerParticle);
 	memset(host_cells_count, 0, number * sizeof(unsigned int));
 	memset(host_cells, 0, number_grid_cells * sizeof(unsigned int) * params.maxParticlesPerCell);
-*/
+
 	//grids
 	allocateArray((void **)&device_neighbors, number * params.maxNeighborsPerParticle * sizeof(unsigned int));
 	allocateArray((void **)&device_neighbors_count, number * sizeof(unsigned int));

@@ -159,14 +159,14 @@ void updateCells(
 ) 
 {
 	uint index = blockIdx.x * blockDim.x + threadIdx.x;
-	if (index >= params.numCells) return;
+	if (index >= params.numBodies) return;
 
 	int3 pos = calcGridPos(make_float3(newPos[index]));
 	int cellHash = calcGridHash(pos);
-	cells_count[cellHash];
+
 	int i = atomicAdd(&cells_count[cellHash], 1);
 	i = min(i, params.maxParticlesPerCell - 1);
-	//cells[cellHash * params.maxParticlesPerCell + i] = index;
+	cells[cellHash * params.maxParticlesPerCell + i] = index;
 	//printf("cellhash = %d, i = %d, index = %d\n",cellHash,i, index);
 }
 
@@ -257,7 +257,7 @@ void getLamdaD(
 	if (neighbors_count[index]) {
 		uint offset = index * params.maxNeighborsPerParticle;
 		for (int i = 0; i < neighbors_count[index]; i++) {
-			float3 gradNeighbor = Wspiky(make_float3(newPos[index]), make_float3(newPos[neighbors[offset + i]]));
+			float3 gradNeighbor = Wspiky(make_float3(newPos[index]), make_float3(newPos[neighbors[offset + i]])) / params.restDensity;
 			gradSelf += gradNeighbor;
 			float len = length(gradNeighbor);
 			grad += len * len;

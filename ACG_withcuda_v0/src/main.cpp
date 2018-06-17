@@ -156,16 +156,16 @@ int main(void) {
 		tester.update();
 		
 		if (dump) {
-			//std::cout << "================================" << std::endl;
-			//   tester.dumpNeighbors();
+			std::cout << "================================" << std::endl;
+			//tester.dumpNeighbors();
 			//std::cout << "================================" << std::endl;
 			//tester.dumpDeltaPosition();
-			//tester.dumpCells();
-			//std::cout << "================================" << std::endl;
+			tester.dumpDensity_Lamda();
+			std::cout << "================================" << std::endl;
 			//tester.dumpParticles(0, 50);
 			//std::cout << "================================" << std::endl;
 			//dump = false;
-			//system("pause");
+			system("pause");
 		}
 		//draw
 		/*omyShader.use();
