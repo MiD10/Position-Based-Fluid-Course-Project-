@@ -9,23 +9,41 @@ struct SimParams
 	float3 colliderPos;
 	float  colliderRadius;
 
+	float deltaTime;
 	float3 gravity;
 	float globalDamping;
+	float kernelRadius;
 	float particleRadius;
 
-	unsigned int gridSize;
+	int3 gridSize;
 	unsigned int numCells;
-	float3 worldOrigin;
-	float cellSize;
+	float3 worldbound;
+	float3 cellSize;
 
 	unsigned int numBodies;
 	unsigned int maxParticlesPerCell;
+	unsigned int maxNeighborsPerParticle;
 
 	float spring;
 	float damping;
 	float shear;
 	float attraction;
 	float boundaryDamping;
+
+	//pbf
+	unsigned int numIterations;
+	float restDensity;
+	float relaxation;
+	float poly6;
+	float spiky;
+	float s_corr_k;
+	float s_corr_dq;
+	float s_corr;
+	unsigned int s_corr_n;
+
+	//debug
+	bool switcher;
+	float tunning;
 };
 
 #endif

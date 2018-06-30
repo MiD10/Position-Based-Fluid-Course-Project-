@@ -1,17 +1,17 @@
 #include "../include/mycamera.h"
 
-MyCamera::MyCamera():cameraPos(glm::vec3(0.0f,0.0f, 5.0f)),
-cameraFront(glm::vec3(0.0f, 0.0f, -1.0f)),
+MyCamera::MyCamera() :cameraPos(glm::vec3(-8.505245f, 4.543453f, 6.628063f)),
+cameraFront(glm::vec3(0.935821f, -0.253758f, -0.244635f)),
 cameraUp(glm::vec3(0.0f, 1.0f, 0.0f)),
 lastX(SCR_WIDTH / 2), lastY(SCR_HEIGHT / 2),
-yaw(-90), pitch(0),
-MouseSensitivity(0.05), CameraSensitivity(0.5),
-firstMouse(true){
+yaw(-14.649985), pitch(-14.699993),
+MouseSensitivity(0.05), CameraSensitivity(5),
+firstMouse(true) {
 }
 
-void MyCamera::KeyBoardMovement(int Direction){
-	float cameraSpeed = 0.05f; // adjust accordingly
-	switch (Direction){
+void MyCamera::KeyBoardMovement(int Direction) {
+	float cameraSpeed = 0.3f; // adjust accordingly
+	switch (Direction) {
 	case FORWARD: cameraPos += cameraSpeed * cameraFront; break;
 	case BACKWARD: cameraPos -= cameraSpeed * cameraFront; break;
 	case LEFTWARD: cameraPos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed; break;
@@ -20,7 +20,7 @@ void MyCamera::KeyBoardMovement(int Direction){
 	}
 }
 
-void MyCamera::MouseMovement(double xpos, double ypos){
+void MyCamera::MouseMovement(double xpos, double ypos) {
 	if (firstMouse)
 	{
 		lastX = xpos;

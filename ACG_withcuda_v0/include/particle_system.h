@@ -23,7 +23,7 @@ using namespace std;
 
 class ParticleSystem {
 public:
-	ParticleSystem(unsigned int number_of_particles, unsigned int gridSize);
+	ParticleSystem(float dT, unsigned int number_of_particles, int3 gridSize);
 
 	unsigned int number;
 	unsigned int number_grid_cells;
@@ -31,39 +31,47 @@ public:
 	unsigned int posVAO;
 	unsigned int colorVAO;
 
-	//CPU data
-	float* host_Position;	//position array in cpu memory
-	float* host_Velocity;	//velocity array in cpu memory
-	float* host_force;		//force array in cpu memory
+	//CPU data: for debug only
+	float* host_Position;			//position array in cpu memory
+	float* host_Velocity;			//velocity array in cpu memory
+	float* host_force;				//force array in cpu memory
+	float* host_density;
+	float* host_lamda;
+	float* host_delta_Position;
+	unsigned int* host_neighborsCount;
+	unsigned int* host_neighbors;
+	unsigned int* host_cells_count;
+	unsigned int* host_cells;
+
 
 	//GPU data
-	float* device_Position; //position array in gpu memory
-	float* device_Velocity;	//velocity array in gpu memory
-	float* device_force;	//force array in gpu memory
+	float* device_Position;			//position array in gpu memory
+	float* device_Velocity;			//velocity array in gpu memory
+	float* device_force;			//force array in gpu memory
 
 	//uniformed grid
-	float* sorted_device_Position;
-	float* sorted_device_Velocity;
-	float* sorted_device_force;
-	unsigned int* grid_cell_start;		//start of each sorted cell
-	unsigned int* grid_cell_end;		//end of each sorted cell
+	unsigned int* device_neighbors;				//neighbors of one particle
+	unsigned int* device_neighbors_count;		//number of neighbors
+	unsigned int* device_cells;					//particles in the cell
+	unsigned int* device_cells_count;			//number of particles
 
-	unsigned int* device_grid_particle_hash;	//particle hash for each particle
-	unsigned int* device_grid_particle_index;	//particle index for each particle
-	unsigned int* device_grid_cell_start;		//start of each sorted cell
-	unsigned int* device_grid_cell_end;			//end of each sorted cell
+	//sloving pbf
+	float* device_new_Position;		//store the new position calculated in solving iterations
+	float* device_density;			//store the density of each particle
+	float* device_lamda;			//store the lamda of each particle
+	float* device_delta_Position;	//store the calculated delta position
 
 	unsigned int gird_sort_bits;
 
-	float *cudaPosVBO;        // these are the CUDA deviceMem Pos
-	float *cudaColorVBO;      // these are the CUDA deviceMem Color
+	float *cudaPosVBO;				// these are the CUDA deviceMem Pos
+	float *cudaColorVBO;			// these are the CUDA deviceMem Color
 
 	
 	//point to the same thing in opengl and in CUDA
-	unsigned int posVBO;         // vertex buffer object for particle positions
-	unsigned int colorVBO;       // vertex buffer object for colors
-	struct cudaGraphicsResource* cuda_posvbo_resource; // handles OpenGL-CUDA exchange
-	struct cudaGraphicsResource* cuda_colorvbo_resource; // handles OpenGL-CUDA exchange
+	unsigned int posVBO;									// vertex buffer object for particle positions
+	unsigned int colorVBO;									// vertex buffer object for colors
+	struct cudaGraphicsResource* cuda_posvbo_resource;		// handles OpenGL-CUDA exchange
+	struct cudaGraphicsResource* cuda_colorvbo_resource;	// handles OpenGL-CUDA exchange
 
 	//params
 	SimParams params;
@@ -73,7 +81,7 @@ public:
 	
 	void resetRandom(void); //reset all the particles's position and velocity randomly
 	void resetGrid(void); //
-	void update(float deltaTime);
+	void update();
 
 	void createPosVBO(unsigned int size);
 	//void createColorVBO(unsigned int size);
@@ -82,6 +90,11 @@ public:
 
 	//debugging
 	void dumpParticles(unsigned int start, unsigned int count);
+	void dumpDensity_Lamda();
+	void dumpLamda();
+	void dumpDeltaPosition();
+	void dumpNeighbors();
+	void dumpCells();
 };
 
 #endif
