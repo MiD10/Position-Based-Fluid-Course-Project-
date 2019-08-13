@@ -12,4 +12,4 @@
 
 2. Project Introction.pptx
 
-3. Demo Videos: https://youtu.be/XjuyLeFsjiQ (dambreak, see more on my playlist: Position Based Fluid)
+3. Demo Videos: https://www.youtube.com/watch?v=XjuyLeFsjiQ&list=PLD6dMoGLAGaINfSuZCQY7BRwZExNrLl6e (dambreak and more on my playlist: Position Based Fluid)
